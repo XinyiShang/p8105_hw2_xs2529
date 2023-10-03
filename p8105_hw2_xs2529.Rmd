@@ -1,0 +1,187 @@
+---
+title: "p8105_hw2_xs2529"
+author: Xinyi Shang
+output: html_document
+date: "2023-10-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_libraries}
+library(tidyverse)
+library(readxl)
+```
+
+## Problem 1
+
+```{r clean_538_pols}
+month_df = 
+  tibble(
+    month_num = 1:12,
+    month_abb = month.abb,
+    month = month.name
+  )
+
+pols = 
+  read_csv("./data/fivethirtyeight_datasets/pols-month.csv") |>
+  separate(mon, into = c("year", "month_num", "day"), convert = TRUE) |>
+  mutate(
+    president = recode(prez_gop, "0" = "dem", "1" = "gop", "2" = "gop")) |>
+  left_join(x = _, y = month_df) |> 
+  select(year, month, everything(), -day, -starts_with("prez")) 
+
+```
+
+We also clean the 538 `snp` data, which contains information related to Standard & Poor’s stock market index.
+
+```{r clean_538_snp}
+
+snp = 
+  read_csv("./data/fivethirtyeight_datasets/snp.csv", col_types = cols(date = col_date(format = "%m/%d/%y"), close = col_double())) |> #modified for correct date
+  separate(date, into = c("year", "month", "day"), convert = TRUE) |> #modified for correct date
+  mutate(year = ifelse(year > 2023, year - 100,year)) |> #modified for correct date
+  arrange(year, month) |>
+  mutate(month = month.name[month]) |>
+  select(year, month, close) 
+
+```
+
+Finally, we tidy the `unemployment` data so that it can be merged with the `pols` and `snp` datasets.
+
+```{r clean_538_unemp}
+unemployment = 
+  read_csv("./data/fivethirtyeight_datasets/unemployment.csv") |>
+  rename(year = Year) |>
+  pivot_longer(
+    Jan:Dec, 
+    names_to = "month_abb",
+    values_to = "unemployment"
+  ) |> 
+  left_join(x = _, y = month_df) |> 
+  select(year, month, unemployment)
+```
+
+Now we merge the three datasets!
+
+```{r merge_538}
+data_538 = 
+  left_join(pols, snp) |>
+  left_join(x = _, y = unemployment)
+
+str(data_538)
+
+write.csv(data_538, "data_538.csv", row.names=FALSE) #save the data into a csv file
+```
+
+## Problem 2
+
+```{r clean Mr TrashWheel}
+Mr_TrashWheel = 
+  read_excel("./data/202207 Trash Wheel Collection Data.xlsx",sheet = "Mr. Trash Wheel", col_names = TRUE) |>
+  select(c(1:14)) |> #ignore the column without data
+  janitor::clean_names() |> #clean the dataset
+  drop_na(dumpster) |> #remove data without dumpster number
+  rename (volume = volume_cubic_yards) |>
+  rename (weight = weight_tons) |>
+  mutate (homes_powered, homes_powered = weight*500/30) |> #calculate number of homes powered
+  mutate(year = as.numeric(year)) |>
+  mutate(TrashWheel = "MrTrashWheel")
+```
+
+
+```{r clean Professor TrashWheel}
+Prof_TrashWheel = 
+  read_excel("./data/202207 Trash Wheel Collection Data.xlsx",sheet = "Professor Trash Wheel", col_names = TRUE) |>
+  janitor::clean_names() |> #clean the dataset
+  drop_na(dumpster) |> #remove data without dumpster number
+  rename (volume = volume_cubic_yards) |>
+  rename (weight = weight_tons) |>
+  mutate (homes_powered, homes_powered = weight*500/30) |> #calculate number of homes powered
+  mutate(year = as.numeric(year)) |>
+  mutate(TrashWheel = "ProfTrashWheel")
+
+```
+
+
+```{r clean Gwynnda TrashWheel}
+Gwynnda_TrashWheel = 
+  read_excel("./data/202207 Trash Wheel Collection Data.xlsx",sheet = "Gwynnda Trash Wheel", col_names = TRUE) |>
+  janitor::clean_names() |> #clean the dataset
+  drop_na(dumpster) |> #remove data without dumpster number
+  rename (volume = volume_cubic_yards) |>
+  rename (weight = weight_tons) |>
+  mutate (homes_powered, homes_powered = weight*500/30) |> #calculate number of homes powered
+  mutate(year = as.numeric(year))|>
+  mutate(TrashWheel = "GwynndaTrashWheel")
+
+```
+
+```{r merge dataset}
+TrashWheel_combined = bind_rows (Mr_TrashWheel,Prof_TrashWheel,Gwynnda_TrashWheel)
+```
+
+The total number of observation after cleaning is `r nrow(TrashWheel_combined)`, and the variables of this dataset are `r names(TrashWheel_combined)`. 
+
+The total weight of trash collected by Professor Trash Wheel is `r filter(TrashWheel_combined, TrashWheel == "ProfTrashWheel") |> pull(weight)|> sum()`
+
+The total number of cigarette butts collected by Gwynnda in July of 2021 is `r filter(TrashWheel_combined, TrashWheel == "GwynndaTrashWheel", year == "2021", month == "July") |> pull(cigarette_butts) |> sum() |> as.integer()`.
+
+## Problem 3
+```{r clean the baseline}
+baseline = 
+  read_csv("./data/data_mci/MCI_baseline.csv", skip = 1) |>
+  janitor::clean_names() |> #clean the dataset
+  mutate (sex = ifelse(sex == 1, "Male", "Female")) |>
+  mutate (apoe4 = ifelse(apoe4 == 1, "APOE4 carrier", "APOE4 non-carrier")) |>
+  mutate (age_at_onset = as.numeric(age_at_onset))
+```
+
+```{r remove participants who are MCI free}
+baseline_clean = 
+  baseline |>
+  filter(age_at_onset > current_age | is.na(age_at_onset))
+
+```
+
+```{r clean the amyloid}
+amyloid = 
+  read_csv("./data/data_mci/mci_amyloid.csv", skip = 1) |>
+  janitor::clean_names() |> #clean the dataset 
+  rename(id = study_id)
+```
+
+```{r remove participants who have missing values}
+amyloid_clean = 
+  amyloid |>
+  mutate(amyloid = ifelse(is.numeric(amyloid == FALSE),NA,amyloid)) |>
+  drop_na(amyloid)  #remove participants with any missing visit
+```
+
+
+```{r combine dataset}
+combined_full = 
+  full_join(baseline,amyloid, by = "id") #total participants in this study 
+
+combined_clean_full = 
+  full_join(baseline_clean,amyloid_clean) #participants without missing value in either dataset
+
+combined_clean = 
+  inner_join(baseline_clean,amyloid_clean) #participants without missing value
+
+```
+
+In total, there are `r nrow(combined_full)` participants who attended this study. There are `r nrow(combined_full)-nrow(baseline)` participants only appears in the amyloid dataset, and `r nrow(combined_full)-nrow(amyloid)` participants only appears in the baseline dataset.
+
+After cleaning the data, there are `r nrow(combined_clean_full)` participants who attended this study without missing value in either dataset. There are `r nrow(combined_clean_full)-nrow(baseline_clean)` participants only appears in the amyloid dataset, and `r nrow(combined_clean_full)-nrow(amyloid_clean)` participants only appears in the baseline dataset.
+
+After cleaning, there are `r nrow(combined_clean)` participatns appears in both dataset. Among all the participants, `r combined_clean |> pull(`
+
+Q1: Cleaning: what data should be removed for baseline and amyloid?
+baseline: having MCI at baseline (should i remove participants who never develop MCI?)
+amyloid: removed participatns have NA values (missing visit)
+
+
+Check whether some participants appear in only the baseline or amyloid datasets, and comment on your findings.  (do this with cleaned dataset or the raw one?)
+Combine the demographic and biomarker datasets so that only participants who appear in both datasets are retained, and briefly describe the resulting dataset; export the result as a CSV to your data directory.
