@@ -449,7 +449,7 @@ merged with the <code>pols</code> and <code>snp</code> datasets.</p>
 <div id="problem-2" class="section level2">
 <h2>Problem 2</h2>
 <pre class="r"><code>Mr_TrashWheel = 
-  read_excel(&quot;./data/202207 Trash Wheel Collection Data.xlsx&quot;,sheet = &quot;Mr. Trash Wheel&quot;, col_names = TRUE) |&gt;
+  read_excel(&quot;./data/202309 Trash Wheel Collection Data.xlsx&quot;,sheet = &quot;Mr. Trash Wheel&quot;, col_names = TRUE) |&gt;
   select(c(1:14)) |&gt; #ignore the column without data
   janitor::clean_names() |&gt; #clean the dataset
   drop_na(dumpster) |&gt; #remove data without dumpster number
@@ -462,7 +462,7 @@ merged with the <code>pols</code> and <code>snp</code> datasets.</p>
 ## • `` -&gt; `...15`
 ## • `` -&gt; `...16`</code></pre>
 <pre class="r"><code>Prof_TrashWheel = 
-  read_excel(&quot;./data/202207 Trash Wheel Collection Data.xlsx&quot;,sheet = &quot;Professor Trash Wheel&quot;, col_names = TRUE) |&gt;
+  read_excel(&quot;./data/202309 Trash Wheel Collection Data.xlsx&quot;,sheet = &quot;Professor Trash Wheel&quot;, col_names = TRUE) |&gt;
   janitor::clean_names() |&gt; #clean the dataset
   drop_na(dumpster) |&gt; #remove data without dumpster number
   rename (volume = volume_cubic_yards) |&gt;
@@ -471,7 +471,7 @@ merged with the <code>pols</code> and <code>snp</code> datasets.</p>
   mutate(year = as.numeric(year)) |&gt;
   mutate(TrashWheel = &quot;ProfTrashWheel&quot;)</code></pre>
 <pre class="r"><code>Gwynnda_TrashWheel = 
-  read_excel(&quot;./data/202207 Trash Wheel Collection Data.xlsx&quot;,sheet = &quot;Gwynnda Trash Wheel&quot;, col_names = TRUE) |&gt;
+  read_excel(&quot;./data/202309 Trash Wheel Collection Data.xlsx&quot;,sheet = &quot;Gwynnda Trash Wheel&quot;, col_names = TRUE) |&gt;
   janitor::clean_names() |&gt; #clean the dataset
   drop_na(dumpster) |&gt; #remove data without dumpster number
   rename (volume = volume_cubic_yards) |&gt;
@@ -480,13 +480,12 @@ merged with the <code>pols</code> and <code>snp</code> datasets.</p>
   mutate(year = as.numeric(year))|&gt;
   mutate(TrashWheel = &quot;GwynndaTrashWheel&quot;)</code></pre>
 <pre class="r"><code>TrashWheel_combined = bind_rows (Mr_TrashWheel,Prof_TrashWheel,Gwynnda_TrashWheel)</code></pre>
-<p>The total number of observation after cleaning is 747, and the
+<p>The total number of observation after cleaning is 845, and the
 variables of this dataset are dumpster, month, year, date, weight,
 volume, plastic_bottles, polystyrene, cigarette_butts, glass_bottles,
-grocery_bags, chip_bags, sports_balls, homes_powered, TrashWheel,
-plastic_bags.</p>
+plastic_bags, wrappers, sports_balls, homes_powered, TrashWheel.</p>
 <p>The total weight of trash collected by Professor Trash Wheel is
-190.12</p>
+216.26</p>
 <p>The total number of cigarette butts collected by Gwynnda in July of
 2021 is 16300.</p>
 </div>
@@ -513,9 +512,18 @@ plastic_bags.</p>
 <pre class="r"><code>baseline_clean = 
   baseline |&gt;
   filter(age_at_onset &gt; current_age | is.na(age_at_onset))</code></pre>
+<p>Discuss important steps in the import process and relevant features
+of the dataset. How many participants were recruited, and of these how
+many develop MCI? What is the average baseline age? What proportion of
+women in the study are APOE4 carriers?</p>
+<p>In total, there are 483 participants recruited in this study, and 479
+participants meet the inclusion criteria. Among all the participants who
+meet the criteria, there are 93 participants who develope MCI. The
+average baseline age is 65.03. There are 29.86% of women in the study
+are APOE4 carriers.</p>
 <pre class="r"><code>amyloid = 
   read_csv(&quot;./data/data_mci/mci_amyloid.csv&quot;, skip = 1) |&gt;
-  janitor::clean_names() |&gt; #clean the dataset 
+  janitor::clean_names() |&gt; #clean the dataset
   rename(id = study_id)</code></pre>
 <pre><code>## Rows: 487 Columns: 6
 ## ── Column specification ────────────────────────────────────────────────────────
@@ -527,7 +535,11 @@ plastic_bags.</p>
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>amyloid_clean = 
   amyloid |&gt;
-  drop_na(baseline, time_2, time_4, time_6, time_8)</code></pre>
+  mutate(amyloid = ifelse(is.numeric(amyloid == FALSE),NA,amyloid)) |&gt;
+  drop_na(amyloid)  #remove participants with any missing visit</code></pre>
+<p>In total, there are 487 participants recruited in this study, and 487
+participants meet the inclusion criteria. The variables evaluated are
+id, baseline, time_2, time_4, time_6, time_8, amyloid.</p>
 <pre class="r"><code>combined_full = 
   full_join(baseline,amyloid, by = &quot;id&quot;) #total participants in this study 
 
@@ -540,12 +552,20 @@ combined_clean_full =
 <p>In total, there are 495 participants who attended this study. There
 are 12 participants only appears in the amyloid dataset, and 8
 participants only appears in the baseline dataset.</p>
-<p>After cleaning the data, there are 492 participants who attended this
-study without missing value in either dataset. There are 13 participants
-only appears in the amyloid dataset, and 145 participants only appears
-in the baseline dataset.</p>
-<p>After cleaning, there are 334 participatns appears in both
-dataset.</p>
+<p>After cleaning the data, there are 495 participants who attended this
+study without missing value in either dataset. There are 16 participants
+only appears in the amyloid dataset, and 8 participants only appears in
+the baseline dataset.</p>
+<p>After cleaning, there are 471 participatns appears in both dataset
+and satisfied all inclusion criteria. The variables considered in this
+dataset are id, current_age, sex, education, apoe4, age_at_onset,
+baseline, time_2, time_4, time_6, time_8, amyloid.</p>
+<p>Among those participants, there are 205 women and 266 men. The
+average age at baseline is 65.05.</p>
+<p>Q1: Cleaning: what data should be removed for baseline and amyloid?
+baseline: having MCI at baseline (should i remove participants who never
+develop MCI?) amyloid: removed participatns have NA values (missing
+visit)</p>
 <p>Check whether some participants appear in only the baseline or
 amyloid datasets, and comment on your findings. (do this with cleaned
 dataset or the raw one?) Combine the demographic and biomarker datasets

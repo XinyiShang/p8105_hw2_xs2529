@@ -58,7 +58,8 @@ baseline_clean =
 
 amyloid = 
   read_csv("./data/data_mci/mci_amyloid.csv", skip = 1) |>
-  janitor::clean_names() |> #clean the dataset 
+  janitor::clean_names() |> #clean the dataset
+  mutate (baseline = as.numeric(baseline),time_2 = as.numeric(time_2), time_4 = as.numeric(time_4), time_6 = as.numeric(time_6), time_8 = as.numeric (time_8)) |>
   rename(id = study_id)
 
 amyloid_clean = 
@@ -87,3 +88,18 @@ filter(TrashWheel_new, TrashWheel == "GwynndaTrashWheel", year == "2021", month 
 pull(cigarette_butts) |> 
 sum()
 
+nrow(baseline)
+nrow(baseline_clean)
+baseline_clean |> filter(is.na(age_at_onset) == FALSE) |> nrow()
+baseline_clean |> pull(current_age) |> mean()
+nrow(filter(baseline, sex == "Female", apoe4 == "APOE4 carrier")) / nrow(filter(baseline, sex == "Female")) *100
+filter (baseline, sex == "Female") |> 
+  (nrow(filter(apoe4 == "APOE4 carrier")) / nrow() *100) |> 
+  round(2)
+
+
+Among all the participants who meet the criteria, the average baseline amyloid $\beta$ 42/40 ratio is `r amyloid_clean |> pull(baseline) |> double() |> mean()`.
+The average amyloid $\beta$ 42/40 ratio after 2 years is `r amyloid_clean |> pull(time_2) |> mean()`.
+The average amyloid $\beta$ 42/40 ratio after 4 years is `r amyloid_clean |> pull(time_4) |> mean()`.
+The average amyloid $\beta$ 42/40 ratio after 6 years is `r amyloid_clean |> pull(time_6) |> mean()`.
+The average amyloid $\beta$ 42/40 ratio after 8 years is `r amyloid_clean |> pull(time_8) |> mean()`.
