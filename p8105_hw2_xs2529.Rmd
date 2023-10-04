@@ -1,7 +1,7 @@
 ---
 title: "p8105_hw2_xs2529"
 author: Xinyi Shang
-output: html_document
+output: git_document
 date: "2023-10-02"
 ---
 
