@@ -210,4 +210,9 @@ After cleaning the data, there are `r nrow(combined_clean_full)` participants wh
 After pivoting the amyloid dataset, the final dataset have `r nrow(combined_pivot)` rows and `r ncol(combined_pivot)` columns.The variables considered in this dataset are `r names(combined_pivot)`.
 
 After cleaning, there are `r nrow(combined_clean)` participatns appears in both dataset and satisfied all inclusion criteria. 
-Among those participants, there are `r filter(combined_clean, sex == "Female") |> nrow()` women and `r filter(combined_clean, sex == "Male") |> nrow()` men. The average age at baseline is `r combined_clean |> pull(current_age) |> mean() |> round(2)`. 
+Among those participants, there are `r filter(combined_clean, sex == "Female") |> nrow()` women and `r filter(combined_clean, sex == "Male") |> nrow()` men. The average age at baseline is `r combined_clean |> pull(current_age) |> mean() |> round(2)`.
+
+```{r save as csv under the data directory}
+write.csv(combined_pivot, "data/ mci_clean.csv", row.names=FALSE)
+```
+
