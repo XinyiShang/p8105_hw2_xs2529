@@ -152,49 +152,63 @@ Among all the participants who meet the criteria, there are `r baseline_clean |>
 There are `r (nrow(filter(baseline, sex == "Female", apoe4 == "APOE4 carrier")) / nrow(filter(baseline, sex == "Female")) *100) |> round(2)`% of women in the study are APOE4 carriers.
 
 ```{r clean the amyloid}
-amyloid = 
+amyloid_clean = 
   read_csv("./data/data_mci/mci_amyloid.csv", skip = 1) |>
   janitor::clean_names() |> #clean the dataset
   rename(id = study_id)
 ```
 
-```{r remove participants who have missing values}
-amyloid_clean = 
-  amyloid |>
-  mutate(amyloid = ifelse(is.numeric(amyloid == FALSE),NA,amyloid)) |>
-  drop_na(amyloid)  #remove participants with any missing visit
+```{r perform pivot for the dataset}
+amyloid_pivot = 
+  pivot_longer(amyloid_clean, col = !id, names_to = "time", values_to = "amyloid β 42/40 ratio")
+  
 ```
 
-In total, there are `r nrow(amyloid)` participants recruited in this study, and `r nrow(amyloid_clean)` participants meet the inclusion criteria. The variables evaluated are `r names (amyloid_clean)`.
+In total, there are `r nrow(amyloid_clean)` participants recruited in this study, and `r nrow(amyloid_clean)` participants meet the inclusion criteria. The variables evaluated are `r names (amyloid_clean)`.
+
 
 Q1: What should be included in the write-up
 
 
 ```{r combine dataset}
 combined_full = 
-  full_join(baseline,amyloid, by = "id") #total participants in this study 
+  full_join(baseline,amyloid_clean, by = "id") #total participants in this study 
 
 combined_clean_full = 
-  full_join(baseline_clean,amyloid_clean) #participants without missing value in either dataset
+  full_join(baseline_clean,amyloid_clean, by = "id") #participants without missing value in either dataset
 
 combined_clean = 
-  inner_join(baseline_clean,amyloid_clean) #participants without missing value
+  inner_join(baseline_clean,amyloid_clean, by = "id") #participants without missing value
+
+combined_pivot = 
+  inner_join(baseline_clean,amyloid_pivot, by = "id")
 
 ```
 
-In total, there are `r nrow(combined_full)` participants who attended this study. There are `r nrow(combined_full)-nrow(baseline)` participants only appears in the amyloid dataset, and `r nrow(combined_full)-nrow(amyloid)` participants only appears in the baseline dataset.
+After cleaning the data, there are `r nrow(combined_clean_full)` participants who attended this study without missing value in either dataset. There are `r anti_join(amyloid_clean, baseline_clean, by = "id" ) |> nrow()` participants only appears in the amyloid dataset, and `r anti_join(baseline_clean, amyloid_clean, by = "id") |> nrow()` participants only appears in the baseline dataset.
 
-After cleaning the data, there are `r nrow(combined_clean_full)` participants who attended this study without missing value in either dataset. There are `r nrow(combined_clean_full)-nrow(baseline_clean)` participants only appears in the amyloid dataset, and `r nrow(combined_clean_full)-nrow(amyloid_clean)` participants only appears in the baseline dataset.
+The final dataset have `r nrow(combined_pivot)` rows and `r ncol(combined_pivot)` columns.The variables considered in this dataset are `r names(combined_pivot)`.
 
-After cleaning, there are `r nrow(combined_clean)` participatns appears in both dataset and satisfied all inclusion criteria. The variables considered in this dataset are `r names(combined_clean)`.
+After cleaning, there are `r nrow(combined_clean)` participatns appears in both dataset and satisfied all inclusion criteria. 
 
-Among those participants, there are `r filter(combined_clean, sex == "Female") |> nrow()` women and `r filter(combined_clean, sex == "Male") |> nrow()` men. The average age at baseline is `r combined_clean |> pull(current_age) |> mean() |> round(2)`. 
+Among those participants, there are `r filter(combined_clean, sex == "Female") |> nrow()` women and `r filter(combined_clean, sex == "Male") |> nrow()` men. The average age at baseline is `r combined_clean |> pull(current_age) |> mean() |> round(2)`.
 
 Q2: Cleaning: what data should be removed for baseline and amyloid?
 baseline: having MCI at baseline (should i remove participants who never develop MCI?)
+1. get mci after the experiment
+2. or never get mci
+the only group filter out is the people who's age of onset is younger than the current. 
+
 amyloid: removed participatns have NA values (missing visit)
+so we are not removing but consider change the arrangement of the data.
+missing visit?
 
-Q3:Do we need to find relationship between data etc? 
+Q3: Do we need to find relationship between data etc? 
 
-Check whether some participants appear in only the baseline or amyloid datasets, and comment on your findings.  (do this with cleaned dataset or the raw one?)
+Q4: Check whether some participants appear in only the baseline or amyloid datasets, and comment on your findings.  
+(do this with cleaned)
+(just get the number or the exact id?) 
+
+dimensions, variables that present, highlight interesting columns.  
+
 Combine the demographic and biomarker datasets so that only participants who appear in both datasets are retained, and briefly describe the resulting dataset; export the result as a CSV to your data directory.

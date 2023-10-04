@@ -521,7 +521,7 @@ participants meet the inclusion criteria. Among all the participants who
 meet the criteria, there are 93 participants who develope MCI. The
 average baseline age is 65.03. There are 29.86% of women in the study
 are APOE4 carriers.</p>
-<pre class="r"><code>amyloid = 
+<pre class="r"><code>amyloid_clean = 
   read_csv(&quot;./data/data_mci/mci_amyloid.csv&quot;, skip = 1) |&gt;
   janitor::clean_names() |&gt; #clean the dataset
   rename(id = study_id)</code></pre>
@@ -533,45 +533,52 @@ are APOE4 carriers.</p>
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>amyloid_clean = 
-  amyloid |&gt;
-  mutate(amyloid = ifelse(is.numeric(amyloid == FALSE),NA,amyloid)) |&gt;
-  drop_na(amyloid)  #remove participants with any missing visit</code></pre>
+<pre class="r"><code>amyloid_pivot = 
+  pivot_longer(amyloid_clean, col = !id, names_to = &quot;time&quot;, values_to = &quot;amyloid β 42/40 ratio&quot;)</code></pre>
 <p>In total, there are 487 participants recruited in this study, and 487
 participants meet the inclusion criteria. The variables evaluated are
-id, baseline, time_2, time_4, time_6, time_8, amyloid.</p>
+id, baseline, time_2, time_4, time_6, time_8.</p>
+<p>Q1: What should be included in the write-up</p>
 <pre class="r"><code>combined_full = 
-  full_join(baseline,amyloid, by = &quot;id&quot;) #total participants in this study 
+  full_join(baseline,amyloid_clean, by = &quot;id&quot;) #total participants in this study 
 
 combined_clean_full = 
-  full_join(baseline_clean,amyloid_clean) #participants without missing value in either dataset</code></pre>
-<pre><code>## Joining with `by = join_by(id)`</code></pre>
-<pre class="r"><code>combined_clean = 
-  inner_join(baseline_clean,amyloid_clean) #participants without missing value</code></pre>
-<pre><code>## Joining with `by = join_by(id)`</code></pre>
-<p>In total, there are 495 participants who attended this study. There
-are 12 participants only appears in the amyloid dataset, and 8
-participants only appears in the baseline dataset.</p>
+  full_join(baseline_clean,amyloid_clean, by = &quot;id&quot;) #participants without missing value in either dataset
+
+combined_clean = 
+  inner_join(baseline_clean,amyloid_clean, by = &quot;id&quot;) #participants without missing value
+
+combined_pivot = 
+  inner_join(baseline_clean,amyloid_pivot, by = &quot;id&quot;)</code></pre>
 <p>After cleaning the data, there are 495 participants who attended this
 study without missing value in either dataset. There are 16 participants
 only appears in the amyloid dataset, and 8 participants only appears in
 the baseline dataset.</p>
+<p>The final dataset have 2355 rows and 8 columns.The variables
+considered in this dataset are id, current_age, sex, education, apoe4,
+age_at_onset, time, amyloid β 42/40 ratio.</p>
 <p>After cleaning, there are 471 participatns appears in both dataset
-and satisfied all inclusion criteria. The variables considered in this
-dataset are id, current_age, sex, education, apoe4, age_at_onset,
-baseline, time_2, time_4, time_6, time_8, amyloid.</p>
+and satisfied all inclusion criteria.</p>
 <p>Among those participants, there are 205 women and 266 men. The
 average age at baseline is 65.05.</p>
-<p>Q1: Cleaning: what data should be removed for baseline and amyloid?
+<p>Q2: Cleaning: what data should be removed for baseline and amyloid?
 baseline: having MCI at baseline (should i remove participants who never
-develop MCI?) amyloid: removed participatns have NA values (missing
-visit)</p>
-<p>Check whether some participants appear in only the baseline or
-amyloid datasets, and comment on your findings. (do this with cleaned
-dataset or the raw one?) Combine the demographic and biomarker datasets
-so that only participants who appear in both datasets are retained, and
-briefly describe the resulting dataset; export the result as a CSV to
-your data directory.</p>
+develop MCI?) 1. get mci after the experiment 2. or never get mci the
+only group filter out is the people who’s age of onset is younger than
+the current.</p>
+<p>amyloid: removed participatns have NA values (missing visit) so we
+are not removing but consider change the arrangement of the data.
+missing visit?</p>
+<p>Q3: Do we need to find relationship between data etc?</p>
+<p>Q4: Check whether some participants appear in only the baseline or
+amyloid datasets, and comment on your findings.<br />
+(do this with cleaned) (just get the number or the exact id?)</p>
+<p>dimensions, variables that present, highlight interesting
+columns.</p>
+<p>Combine the demographic and biomarker datasets so that only
+participants who appear in both datasets are retained, and briefly
+describe the resulting dataset; export the result as a CSV to your data
+directory.</p>
 </div>
 
 
