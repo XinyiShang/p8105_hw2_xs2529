@@ -357,18 +357,8 @@ display: none;
 </div>
 
 
-<pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.3     ✔ readr     2.1.4
-## ✔ forcats   1.0.0     ✔ stringr   1.5.0
-## ✔ ggplot2   3.4.3     ✔ tibble    3.2.1
-## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
-## ✔ purrr     1.0.2     
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()
-## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-<pre class="r"><code>library(readxl)</code></pre>
+<pre class="r"><code>library(tidyverse)
+library(readxl)</code></pre>
 <div id="problem-1" class="section level2">
 <h2>Problem 1</h2>
 <pre class="r"><code>month_df = 
@@ -385,18 +375,10 @@ pols =
     president = recode(prez_gop, &quot;0&quot; = &quot;dem&quot;, &quot;1&quot; = &quot;gop&quot;, &quot;2&quot; = &quot;gop&quot;)) |&gt;
   left_join(x = _, y = month_df) |&gt; 
   select(year, month, everything(), -day, -starts_with(&quot;prez&quot;)) </code></pre>
-<pre><code>## Rows: 822 Columns: 9
-## ── Column specification ────────────────────────────────────────────────────────
-## Delimiter: &quot;,&quot;
-## dbl  (8): prez_gop, gov_gop, sen_gop, rep_gop, prez_dem, gov_dem, sen_dem, r...
-## date (1): mon
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-## Joining with `by = join_by(month_num)`</code></pre>
 <p>We also clean the 538 <code>snp</code> data, which contains
 information related to Standard &amp; Poor’s stock market index.</p>
-<pre class="r"><code>snp = 
+<pre class="r"><code>
+snp = 
   read_csv(&quot;./data/fivethirtyeight_datasets/snp.csv&quot;, col_types = cols(date = col_date(format = &quot;%m/%d/%y&quot;), close = col_double())) |&gt; #modified for correct date
   separate(date, into = c(&quot;year&quot;, &quot;month&quot;, &quot;day&quot;), convert = TRUE) |&gt; #modified for correct date
   mutate(year = ifelse(year &gt; 2023, year - 100,year)) |&gt; #modified for correct date
@@ -415,22 +397,13 @@ merged with the <code>pols</code> and <code>snp</code> datasets.</p>
   ) |&gt; 
   left_join(x = _, y = month_df) |&gt; 
   select(year, month, unemployment)</code></pre>
-<pre><code>## Rows: 68 Columns: 13
-## ── Column specification ────────────────────────────────────────────────────────
-## Delimiter: &quot;,&quot;
-## dbl (13): Year, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-## Joining with `by = join_by(month_abb)`</code></pre>
 <p>Now we merge the three datasets!</p>
 <pre class="r"><code>data_538 = 
   left_join(pols, snp) |&gt;
-  left_join(x = _, y = unemployment)</code></pre>
-<pre><code>## Joining with `by = join_by(year, month)`
-## Joining with `by = join_by(year, month)`</code></pre>
-<pre class="r"><code>str(data_538)</code></pre>
-<pre><code>## tibble [822 × 13] (S3: tbl_df/tbl/data.frame)
+  left_join(x = _, y = unemployment)
+
+str(data_538)
+## tibble [822 × 13] (S3: tbl_df/tbl/data.frame)
 ##  $ year        : num [1:822] 1947 1947 1947 1947 1947 ...
 ##  $ month       : chr [1:822] &quot;January&quot; &quot;February&quot; &quot;March&quot; &quot;April&quot; ...
 ##  $ month_num   : int [1:822] 1 2 3 4 5 6 7 8 9 10 ...
@@ -443,11 +416,29 @@ merged with the <code>pols</code> and <code>snp</code> datasets.</p>
 ##  $ president   : chr [1:822] &quot;dem&quot; &quot;dem&quot; &quot;dem&quot; &quot;dem&quot; ...
 ##  $ month_abb   : chr [1:822] &quot;Jan&quot; &quot;Feb&quot; &quot;Mar&quot; &quot;Apr&quot; ...
 ##  $ close       : num [1:822] NA NA NA NA NA NA NA NA NA NA ...
-##  $ unemployment: num [1:822] NA NA NA NA NA NA NA NA NA NA ...</code></pre>
-<pre class="r"><code>write.csv(data_538, &quot;data_538.csv&quot;, row.names=FALSE) #save the data into a csv file</code></pre>
+##  $ unemployment: num [1:822] NA NA NA NA NA NA NA NA NA NA ...
+
+write.csv(data_538, &quot;data_538.csv&quot;, row.names=FALSE) #save the data into a csv file</code></pre>
+<p>Notice that there are some <code>NA</code> values in the
+<code>close</code> and <code>unemployment</code> variables, which
+indicate that the value of these variables is missing at those
+locations.</p>
+<p>Let’s talk about the 538 datasets. The <code>pols</code> data has 822
+observations and 11 variables and tells us about the party affiliation
+distribution (democrat or republican) for governors and senators for a
+given year from years 1947 to 2015. It also tells us whether the sitting
+president was a democrat or republican. The <code>snp</code> data has
+787 observations and 3 variables, ranging from years 1950 to 2015. The
+<code>unemployment</code> data has 816 observations and 3 variables
+ranging from years 1948 to 2015. In Januarys in or after 1975 in which a
+democrat was president, the average unemployment rate was 6.57. The
+average unemployment rate over the same time period in which a
+republican was president was 6.47.</p>
 </div>
 <div id="problem-2" class="section level2">
 <h2>Problem 2</h2>
+<p>Firstly, I cleaned the Mr. TrashWheel, Professor TrashWheel, and
+Gwynnda TrashWheel dataset.</p>
 <pre class="r"><code>Mr_TrashWheel = 
   read_excel(&quot;./data/202309 Trash Wheel Collection Data.xlsx&quot;,sheet = &quot;Mr. Trash Wheel&quot;, col_names = TRUE) |&gt;
   select(c(1:14)) |&gt; #ignore the column without data
@@ -458,9 +449,6 @@ merged with the <code>pols</code> and <code>snp</code> datasets.</p>
   mutate (homes_powered, homes_powered = weight*500/30) |&gt; #calculate number of homes powered
   mutate(year = as.numeric(year)) |&gt;
   mutate(TrashWheel = &quot;MrTrashWheel&quot;)</code></pre>
-<pre><code>## New names:
-## • `` -&gt; `...15`
-## • `` -&gt; `...16`</code></pre>
 <pre class="r"><code>Prof_TrashWheel = 
   read_excel(&quot;./data/202309 Trash Wheel Collection Data.xlsx&quot;,sheet = &quot;Professor Trash Wheel&quot;, col_names = TRUE) |&gt;
   janitor::clean_names() |&gt; #clean the dataset
@@ -479,106 +467,123 @@ merged with the <code>pols</code> and <code>snp</code> datasets.</p>
   mutate (homes_powered, homes_powered = weight*500/30) |&gt; #calculate number of homes powered
   mutate(year = as.numeric(year))|&gt;
   mutate(TrashWheel = &quot;GwynndaTrashWheel&quot;)</code></pre>
-<pre class="r"><code>TrashWheel_combined = bind_rows (Mr_TrashWheel,Prof_TrashWheel,Gwynnda_TrashWheel)</code></pre>
+<p>Then, I merged those three datasets together.</p>
+<pre class="r"><code>TrashWheel_combined = bind_rows (Mr_TrashWheel,Prof_TrashWheel,Gwynnda_TrashWheel)
+
+str(TrashWheel_combined)
+## tibble [845 × 15] (S3: tbl_df/tbl/data.frame)
+##  $ dumpster       : num [1:845] 1 2 3 4 5 6 7 8 9 10 ...
+##  $ month          : chr [1:845] &quot;May&quot; &quot;May&quot; &quot;May&quot; &quot;May&quot; ...
+##  $ year           : num [1:845] 2014 2014 2014 2014 2014 ...
+##  $ date           : POSIXct[1:845], format: &quot;2014-05-16&quot; &quot;2014-05-16&quot; ...
+##  $ weight         : num [1:845] 4.31 2.74 3.45 3.1 4.06 2.71 1.91 3.7 2.52 3.76 ...
+##  $ volume         : num [1:845] 18 13 15 15 18 13 8 16 14 18 ...
+##  $ plastic_bottles: num [1:845] 1450 1120 2450 2380 980 1430 910 3580 2400 1340 ...
+##  $ polystyrene    : num [1:845] 1820 1030 3100 2730 870 2140 1090 4310 2790 1730 ...
+##  $ cigarette_butts: num [1:845] 126000 91000 105000 100000 120000 90000 56000 112000 98000 130000 ...
+##  $ glass_bottles  : num [1:845] 72 42 50 52 72 46 32 58 49 75 ...
+##  $ plastic_bags   : num [1:845] 584 496 1080 896 368 ...
+##  $ wrappers       : num [1:845] 1162 874 2032 1971 753 ...
+##  $ sports_balls   : num [1:845] 7.2 5.2 6 6 7.2 5.2 3.2 6.4 5.6 7.2 ...
+##  $ homes_powered  : num [1:845] 71.8 45.7 57.5 51.7 67.7 ...
+##  $ TrashWheel     : chr [1:845] &quot;MrTrashWheel&quot; &quot;MrTrashWheel&quot; &quot;MrTrashWheel&quot; &quot;MrTrashWheel&quot; ...</code></pre>
 <p>The total number of observation after cleaning is 845, and the
 variables of this dataset are dumpster, month, year, date, weight,
 volume, plastic_bottles, polystyrene, cigarette_butts, glass_bottles,
 plastic_bags, wrappers, sports_balls, homes_powered, TrashWheel.</p>
+<p>The dataset contains the trashes removed by the water-wheel vessel
+from the Inner Harbor in Baltimore from 2014 to 2023. Three types of
+Trash Wheel are included in this dataset: Mr. Trash Wheel, Professor
+Trash Wheel, and Gwynnda Trash Wheel. The total weight of trashes
+collected by those three trash wheels is 2543.01 tons.</p>
 <p>The total weight of trash collected by Professor Trash Wheel is
-216.26</p>
+216.26 tons.</p>
 <p>The total number of cigarette butts collected by Gwynnda in July of
 2021 is 16300.</p>
 </div>
 <div id="problem-3" class="section level2">
 <h2>Problem 3</h2>
+<div id="baseline-dataset" class="section level4">
+<h4>Baseline dataset</h4>
+<p>Firstly, I cleaned the baseline dataset.</p>
 <pre class="r"><code>baseline = 
   read_csv(&quot;./data/data_mci/MCI_baseline.csv&quot;, skip = 1) |&gt;
   janitor::clean_names() |&gt; #clean the dataset
   mutate (sex = ifelse(sex == 1, &quot;Male&quot;, &quot;Female&quot;)) |&gt;
   mutate (apoe4 = ifelse(apoe4 == 1, &quot;APOE4 carrier&quot;, &quot;APOE4 non-carrier&quot;)) |&gt;
-  mutate (age_at_onset = as.numeric(age_at_onset))</code></pre>
-<pre><code>## Rows: 483 Columns: 6
-## ── Column specification ────────────────────────────────────────────────────────
-## Delimiter: &quot;,&quot;
-## chr (1): Age at onset
-## dbl (5): ID, Current Age, Sex, Education, apoe4
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre><code>## Warning: There was 1 warning in `mutate()`.
+  mutate (age_at_onset = as.numeric(age_at_onset))
+## Warning: There was 1 warning in `mutate()`.
 ## ℹ In argument: `age_at_onset = as.numeric(age_at_onset)`.
 ## Caused by warning:
 ## ! NAs introduced by coercion</code></pre>
+<p>Then, I removed the participants who did not meet the inclusion
+criteria, which is no MCI at the baseline.</p>
 <pre class="r"><code>baseline_clean = 
   baseline |&gt;
-  filter(age_at_onset &gt; current_age | is.na(age_at_onset))</code></pre>
-<p>Discuss important steps in the import process and relevant features
-of the dataset. How many participants were recruited, and of these how
-many develop MCI? What is the average baseline age? What proportion of
-women in the study are APOE4 carriers?</p>
-<p>In total, there are 483 participants recruited in this study, and 479
-participants meet the inclusion criteria. Among all the participants who
-meet the criteria, there are 93 participants who develope MCI. The
-average baseline age is 65.03. There are 29.86% of women in the study
-are APOE4 carriers.</p>
+  filter(age_at_onset &gt; current_age | is.na(age_at_onset))
+#only participants who develop MCI after the baseline and participants who never develop MCI are kept. </code></pre>
+<p>In the baseline dataset, there are 483 participants recruited in this
+study, and 479 participants meet the inclusion criteria.</p>
+<p>Among all the participants who meet the criteria, there are 93
+participants who develope MCI. The average baseline age is 65.03.</p>
+<p>There are 29.86% of women in the study are APOE4 carriers.</p>
+</div>
+<div id="amyloid-dataset" class="section level4">
+<h4>Amyloid dataset</h4>
+<p>Firstly, I cleaned the amyloid dataset.</p>
 <pre class="r"><code>amyloid_clean = 
   read_csv(&quot;./data/data_mci/mci_amyloid.csv&quot;, skip = 1) |&gt;
   janitor::clean_names() |&gt; #clean the dataset
   rename(id = study_id)</code></pre>
-<pre><code>## Rows: 487 Columns: 6
-## ── Column specification ────────────────────────────────────────────────────────
-## Delimiter: &quot;,&quot;
-## chr (5): Baseline, Time 2, Time 4, Time 6, Time 8
-## dbl (1): Study ID
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<p>Then, I performed pivot for the amyloid dataset.</p>
 <pre class="r"><code>amyloid_pivot = 
-  pivot_longer(amyloid_clean, col = !id, names_to = &quot;time&quot;, values_to = &quot;amyloid β 42/40 ratio&quot;)</code></pre>
+  pivot_longer(amyloid_clean, col = !id, names_to = &quot;time&quot;, values_to = &quot;amyloid beta 42/40 ratio&quot;)
+  </code></pre>
+<p>There are <code>NA</code> values in the
+<code>amyloid beta 42/40 ratio</code>, which means there are missing
+values.</p>
 <p>In total, there are 487 participants recruited in this study, and 487
-participants meet the inclusion criteria. The variables evaluated are
-id, baseline, time_2, time_4, time_6, time_8.</p>
-<p>Q1: What should be included in the write-up</p>
+participants meet the inclusion criteria for the amyloid dataset. The
+variables evaluated are id, baseline, time_2, time_4, time_6,
+time_8.</p>
+</div>
+<div id="merge-dataset" class="section level4">
+<h4>Merge dataset</h4>
+<p>In the end, I combined the baseline and the amyloid dataset.</p>
 <pre class="r"><code>combined_full = 
   full_join(baseline,amyloid_clean, by = &quot;id&quot;) #total participants in this study 
 
 combined_clean_full = 
-  full_join(baseline_clean,amyloid_clean, by = &quot;id&quot;) #participants without missing value in either dataset
+  full_join(baseline_clean,amyloid_clean, by = &quot;id&quot;) #participants meet all criteria
 
 combined_clean = 
-  inner_join(baseline_clean,amyloid_clean, by = &quot;id&quot;) #participants without missing value
+  inner_join(baseline_clean,amyloid_clean, by = &quot;id&quot;) #participants meet all criteria and appears in both dataset
 
 combined_pivot = 
-  inner_join(baseline_clean,amyloid_pivot, by = &quot;id&quot;)</code></pre>
+  inner_join(baseline_clean,amyloid_pivot, by = &quot;id&quot;) #combine the dataset after pivot
+
+str(combined_pivot)
+## tibble [2,355 × 8] (S3: tbl_df/tbl/data.frame)
+##  $ id                      : num [1:2355] 1 1 1 1 1 2 2 2 2 2 ...
+##  $ current_age             : num [1:2355] 63.1 63.1 63.1 63.1 63.1 65.6 65.6 65.6 65.6 65.6 ...
+##  $ sex                     : chr [1:2355] &quot;Female&quot; &quot;Female&quot; &quot;Female&quot; &quot;Female&quot; ...
+##  $ education               : num [1:2355] 16 16 16 16 16 20 20 20 20 20 ...
+##  $ apoe4                   : chr [1:2355] &quot;APOE4 carrier&quot; &quot;APOE4 carrier&quot; &quot;APOE4 carrier&quot; &quot;APOE4 carrier&quot; ...
+##  $ age_at_onset            : num [1:2355] NA NA NA NA NA NA NA NA NA NA ...
+##  $ time                    : chr [1:2355] &quot;baseline&quot; &quot;time_2&quot; &quot;time_4&quot; &quot;time_6&quot; ...
+##  $ amyloid beta 42/40 ratio: chr [1:2355] &quot;0.1105487&quot; NA &quot;0.109325197&quot; &quot;0.104756131&quot; ...</code></pre>
 <p>After cleaning the data, there are 495 participants who attended this
-study without missing value in either dataset. There are 16 participants
+study who fullfilled the inclusion criteria. There are 16 participants
 only appears in the amyloid dataset, and 8 participants only appears in
 the baseline dataset.</p>
-<p>The final dataset have 2355 rows and 8 columns.The variables
-considered in this dataset are id, current_age, sex, education, apoe4,
-age_at_onset, time, amyloid β 42/40 ratio.</p>
+<p>After pivoting the amyloid dataset, the final dataset have 2355 rows
+and 8 columns.The variables considered in this dataset are id,
+current_age, sex, education, apoe4, age_at_onset, time, amyloid beta
+42/40 ratio.</p>
 <p>After cleaning, there are 471 participatns appears in both dataset
-and satisfied all inclusion criteria.</p>
-<p>Among those participants, there are 205 women and 266 men. The
-average age at baseline is 65.05.</p>
-<p>Q2: Cleaning: what data should be removed for baseline and amyloid?
-baseline: having MCI at baseline (should i remove participants who never
-develop MCI?) 1. get mci after the experiment 2. or never get mci the
-only group filter out is the people who’s age of onset is younger than
-the current.</p>
-<p>amyloid: removed participatns have NA values (missing visit) so we
-are not removing but consider change the arrangement of the data.
-missing visit?</p>
-<p>Q3: Do we need to find relationship between data etc?</p>
-<p>Q4: Check whether some participants appear in only the baseline or
-amyloid datasets, and comment on your findings.<br />
-(do this with cleaned) (just get the number or the exact id?)</p>
-<p>dimensions, variables that present, highlight interesting
-columns.</p>
-<p>Combine the demographic and biomarker datasets so that only
-participants who appear in both datasets are retained, and briefly
-describe the resulting dataset; export the result as a CSV to your data
-directory.</p>
+and satisfied all inclusion criteria. Among those participants, there
+are 205 women and 266 men. The average age at baseline is 65.05.</p>
+</div>
 </div>
 
 

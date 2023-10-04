@@ -6,7 +6,7 @@ date: "2023-10-02"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,collapse = TRUE, message = FALSE)
 ```
 
 ```{r load_libraries}
@@ -75,8 +75,14 @@ str(data_538)
 write.csv(data_538, "data_538.csv", row.names=FALSE) #save the data into a csv file
 ```
 
+Notice that there are some `NA` values in the `close` and `unemployment` variables, which indicate that the value of these variables is missing at those locations.
+
+Let's talk about the 538 datasets. The `pols` data has `r nrow(pols)` observations and `r ncol(pols)` variables and tells us about the party affiliation distribution (democrat or republican) for governors and senators for a given year from years `r (pols |> select(year) |> range())[1]` to `r (pols |> select(year) |> range())[2]`. It also tells us whether the sitting president was a democrat or republican. The `snp` data has `r nrow(snp)` observations and `r ncol(snp)` variables, ranging from years `r (snp |> select(year)|> range())[1]` to `r (snp |> select(year) |> range())[2]`. The `unemployment` data has `r nrow(unemployment)` observations and `r ncol(unemployment)` variables ranging from years `r (unemployment |> select(year) |> range())[1]` to `r (unemployment |> select(year) |> range())[2]`. In Januarys in or after 1975 in which a democrat was president, the average unemployment rate was `r filter(data_538, month == "January", year >= 1975, president == "dem") |> pull(unemployment) |> mean() |> round(2)`.  The average unemployment rate over the same time period in which a republican was president was `r filter(data_538, month == "January", year >= 1975, president == "gop") |> pull(unemployment) |> mean() |> round(2)`.
+
+
 ## Problem 2
 
+Firstly, I cleaned the Mr. TrashWheel, Professor TrashWheel, and Gwynnda TrashWheel dataset. 
 ```{r clean Mr TrashWheel}
 Mr_TrashWheel = 
   read_excel("./data/202309 Trash Wheel Collection Data.xlsx",sheet = "Mr. Trash Wheel", col_names = TRUE) |>
@@ -118,17 +124,25 @@ Gwynnda_TrashWheel =
 
 ```
 
+Then, I merged those three datasets together. 
 ```{r merge dataset}
 TrashWheel_combined = bind_rows (Mr_TrashWheel,Prof_TrashWheel,Gwynnda_TrashWheel)
+
+str(TrashWheel_combined)
 ```
 
 The total number of observation after cleaning is `r nrow(TrashWheel_combined)`, and the variables of this dataset are `r names(TrashWheel_combined)`. 
 
-The total weight of trash collected by Professor Trash Wheel is `r filter(TrashWheel_combined, TrashWheel == "ProfTrashWheel") |> pull(weight)|> sum()`
+The dataset contains the trashes removed by the water-wheel vessel from the Inner Harbor in Baltimore from `r (TrashWheel_combined |> select(year) |> range())[1]` to `r (TrashWheel_combined |> select(year) |> range())[2]`. Three types of Trash Wheel are included in this dataset: Mr. Trash Wheel, Professor Trash Wheel, and Gwynnda Trash Wheel. The total weight of trashes collected by those three trash wheels is `r TrashWheel_combined |> pull(weight)|> sum()` tons.
 
-The total number of cigarette butts collected by Gwynnda in July of 2021 is `r filter(TrashWheel_combined, TrashWheel == "GwynndaTrashWheel", year == "2021", month == "July") |> pull(cigarette_butts) |> sum() |> as.integer()`.
+The total weight of trash collected by Professor Trash Wheel is `r filter(TrashWheel_combined, TrashWheel == "ProfTrashWheel") |> pull(weight)|> sum()` tons. 
+
+The total number of cigarette butts collected by Gwynnda in July of 2021 is `r filter(TrashWheel_combined, TrashWheel == "GwynndaTrashWheel", year == "2021", month == "July") |> pull(cigarette_butts) |> sum() |> as.integer()`. 
 
 ## Problem 3
+
+#### Baseline dataset
+Firstly, I cleaned the baseline dataset.
 ```{r clean the baseline}
 baseline = 
   read_csv("./data/data_mci/MCI_baseline.csv", skip = 1) |>
@@ -138,19 +152,22 @@ baseline =
   mutate (age_at_onset = as.numeric(age_at_onset))
 ```
 
+Then, I removed the participants who did not meet the inclusion criteria, which is no MCI at the baseline. 
 ```{r remove participants who are MCI free}
 baseline_clean = 
   baseline |>
   filter(age_at_onset > current_age | is.na(age_at_onset))
-
+#only participants who develop MCI after the baseline and participants who never develop MCI are kept. 
 ```
 
-Discuss important steps in the import process and relevant features of the dataset. How many participants were recruited, and of these how many develop MCI? What is the average baseline age? What proportion of women in the study are APOE4 carriers?
+In the baseline dataset, there are `r nrow(baseline)` participants recruited in this study, and `r nrow(baseline_clean)` participants meet the inclusion criteria. 
 
-In total, there are `r nrow(baseline)` participants recruited in this study, and `r nrow(baseline_clean)` participants meet the inclusion criteria. 
 Among all the participants who meet the criteria, there are `r baseline_clean |> filter(is.na(age_at_onset) == FALSE) |> nrow()` participants who develope MCI. The average baseline age is `r baseline_clean |> pull(current_age) |> mean() |>round(2)`.
+
 There are `r (nrow(filter(baseline, sex == "Female", apoe4 == "APOE4 carrier")) / nrow(filter(baseline, sex == "Female")) *100) |> round(2)`% of women in the study are APOE4 carriers.
 
+#### Amyloid dataset
+Firstly, I cleaned the amyloid dataset. 
 ```{r clean the amyloid}
 amyloid_clean = 
   read_csv("./data/data_mci/mci_amyloid.csv", skip = 1) |>
@@ -158,57 +175,39 @@ amyloid_clean =
   rename(id = study_id)
 ```
 
+Then, I performed pivot for the amyloid dataset. 
 ```{r perform pivot for the dataset}
 amyloid_pivot = 
-  pivot_longer(amyloid_clean, col = !id, names_to = "time", values_to = "amyloid β 42/40 ratio")
+  pivot_longer(amyloid_clean, col = !id, names_to = "time", values_to = "amyloid beta 42/40 ratio")
   
 ```
 
-In total, there are `r nrow(amyloid_clean)` participants recruited in this study, and `r nrow(amyloid_clean)` participants meet the inclusion criteria. The variables evaluated are `r names (amyloid_clean)`.
+There are `NA` values in the `amyloid beta 42/40 ratio`, which means there are missing values.
 
+In total, there are `r nrow(amyloid_clean)` participants recruited in this study, and `r nrow(amyloid_clean)` participants meet the inclusion criteria for the amyloid dataset. The variables evaluated are `r names (amyloid_clean)`.
 
-Q1: What should be included in the write-up
-
-
+#### Merge dataset
+In the end, I combined the baseline and the amyloid dataset. 
 ```{r combine dataset}
 combined_full = 
   full_join(baseline,amyloid_clean, by = "id") #total participants in this study 
 
 combined_clean_full = 
-  full_join(baseline_clean,amyloid_clean, by = "id") #participants without missing value in either dataset
+  full_join(baseline_clean,amyloid_clean, by = "id") #participants meet all criteria
 
 combined_clean = 
-  inner_join(baseline_clean,amyloid_clean, by = "id") #participants without missing value
+  inner_join(baseline_clean,amyloid_clean, by = "id") #participants meet all criteria and appears in both dataset
 
 combined_pivot = 
-  inner_join(baseline_clean,amyloid_pivot, by = "id")
+  inner_join(baseline_clean,amyloid_pivot, by = "id") #combine the dataset after pivot
+
+str(combined_pivot)
 
 ```
 
-After cleaning the data, there are `r nrow(combined_clean_full)` participants who attended this study without missing value in either dataset. There are `r anti_join(amyloid_clean, baseline_clean, by = "id" ) |> nrow()` participants only appears in the amyloid dataset, and `r anti_join(baseline_clean, amyloid_clean, by = "id") |> nrow()` participants only appears in the baseline dataset.
+After cleaning the data, there are `r nrow(combined_clean_full)` participants who attended this study who fullfilled the inclusion criteria. There are `r anti_join(amyloid_clean, baseline_clean, by = "id" ) |> nrow()` participants only appears in the amyloid dataset, and `r anti_join(baseline_clean, amyloid_clean, by = "id") |> nrow()` participants only appears in the baseline dataset.
 
-The final dataset have `r nrow(combined_pivot)` rows and `r ncol(combined_pivot)` columns.The variables considered in this dataset are `r names(combined_pivot)`.
+After pivoting the amyloid dataset, the final dataset have `r nrow(combined_pivot)` rows and `r ncol(combined_pivot)` columns.The variables considered in this dataset are `r names(combined_pivot)`.
 
 After cleaning, there are `r nrow(combined_clean)` participatns appears in both dataset and satisfied all inclusion criteria. 
-
-Among those participants, there are `r filter(combined_clean, sex == "Female") |> nrow()` women and `r filter(combined_clean, sex == "Male") |> nrow()` men. The average age at baseline is `r combined_clean |> pull(current_age) |> mean() |> round(2)`.
-
-Q2: Cleaning: what data should be removed for baseline and amyloid?
-baseline: having MCI at baseline (should i remove participants who never develop MCI?)
-1. get mci after the experiment
-2. or never get mci
-the only group filter out is the people who's age of onset is younger than the current. 
-
-amyloid: removed participatns have NA values (missing visit)
-so we are not removing but consider change the arrangement of the data.
-missing visit?
-
-Q3: Do we need to find relationship between data etc? 
-
-Q4: Check whether some participants appear in only the baseline or amyloid datasets, and comment on your findings.  
-(do this with cleaned)
-(just get the number or the exact id?) 
-
-dimensions, variables that present, highlight interesting columns.  
-
-Combine the demographic and biomarker datasets so that only participants who appear in both datasets are retained, and briefly describe the resulting dataset; export the result as a CSV to your data directory.
+Among those participants, there are `r filter(combined_clean, sex == "Female") |> nrow()` women and `r filter(combined_clean, sex == "Male") |> nrow()` men. The average age at baseline is `r combined_clean |> pull(current_age) |> mean() |> round(2)`. 
