@@ -124,6 +124,9 @@ Gwynnda_TrashWheel =
 
 ```
 
+After cleaning, the Mr TrashWheel dataset has `r nrow (Mr_TrashWheel)` rows and `r ncol (Mr_TrashWheel)` columns. The Professor TrashWheel dataset has `r nrow (Prof_TrashWheel)` rows and `r ncol (Prof_TrashWheel)` columns. The Gwynnda TrashWheel dataset has `r nrow (Gwynnda_TrashWheel)` rows and `r ncol (Gwynnda_TrashWheel)` columns
+
+
 Then, I merged those three datasets together. 
 ```{r merge dataset}
 TrashWheel_combined = bind_rows (Mr_TrashWheel,Prof_TrashWheel,Gwynnda_TrashWheel)
@@ -131,9 +134,9 @@ TrashWheel_combined = bind_rows (Mr_TrashWheel,Prof_TrashWheel,Gwynnda_TrashWhee
 str(TrashWheel_combined)
 ```
 
-The total number of observation after cleaning is `r nrow(TrashWheel_combined)`, and the variables of this dataset are `r names(TrashWheel_combined)`. 
+The total number of observation after cleaning is `r nrow(TrashWheel_combined)`. There are `r ncol(TrashWheel_combined)` variables, and they are: `r names(TrashWheel_combined)`. 
 
-The dataset contains the trashes removed by the water-wheel vessel from the Inner Harbor in Baltimore from `r (TrashWheel_combined |> select(year) |> range())[1]` to `r (TrashWheel_combined |> select(year) |> range())[2]`. Three types of Trash Wheel are included in this dataset: Mr. Trash Wheel, Professor Trash Wheel, and Gwynnda Trash Wheel. The total weight of trashes collected by those three trash wheels is `r TrashWheel_combined |> pull(weight)|> sum()` tons.
+The dataset contains the trashes removed by the water-wheel vessel from the Inner Harbor in Baltimore from `r (TrashWheel_combined |> select(year) |> range())[1]` to `r (TrashWheel_combined |> select(year) |> range())[2]`. Three types of Trash Wheel are included in this dataset: Mr. Trash Wheel, Professor Trash Wheel, and Gwynnda Trash Wheel. 
 
 The total weight of trash collected by Professor Trash Wheel is `r filter(TrashWheel_combined, TrashWheel == "ProfTrashWheel") |> pull(weight)|> sum()` tons. 
 
@@ -160,7 +163,7 @@ baseline_clean =
 #only participants who develop MCI after the baseline and participants who never develop MCI are kept. 
 ```
 
-In the baseline dataset, there are `r nrow(baseline)` participants recruited in this study, and `r nrow(baseline_clean)` participants meet the inclusion criteria. 
+In the baseline dataset, there are `r nrow(baseline)` participants recruited in this study, and `r nrow(baseline_clean)` participants meet the inclusion criteria. There are `r ncol(baseline_clean)` variables in this dataset, and they are: `r names(baseline_clean)`.
 
 Among all the participants who meet the criteria, there are `r baseline_clean |> filter(is.na(age_at_onset) == FALSE) |> nrow()` participants who develope MCI. The average baseline age is `r baseline_clean |> pull(current_age) |> mean() |>round(2)`.
 
@@ -205,12 +208,11 @@ str(combined_pivot)
 
 ```
 
-After cleaning the data, there are `r nrow(combined_clean_full)` participants who attended this study who fullfilled the inclusion criteria. There are `r anti_join(amyloid_clean, baseline_clean, by = "id" ) |> nrow()` participants only appears in the amyloid dataset, and `r anti_join(baseline_clean, amyloid_clean, by = "id") |> nrow()` participants only appears in the baseline dataset.
+After cleaning the data, there are `r nrow(combined_clean_full)` participants who attended this study and fullfilled the inclusion criteria. However, there are `r anti_join(amyloid_clean, baseline_clean, by = "id" ) |> nrow()` participants only appears in the amyloid dataset, and `r anti_join(baseline_clean, amyloid_clean, by = "id") |> nrow()` participants only appears in the baseline dataset.
+After cleaning, there are `r nrow(combined_clean)` participatns appears in both dataset and satisfied all inclusion criteria. 
+Among those participants, there are `r filter(combined_clean, sex == "Female") |> nrow()` women and `r filter(combined_clean, sex == "Male") |> nrow()` men. 
 
 After pivoting the amyloid dataset, the final dataset have `r nrow(combined_pivot)` rows and `r ncol(combined_pivot)` columns.The variables considered in this dataset are `r names(combined_pivot)`.
-
-After cleaning, there are `r nrow(combined_clean)` participatns appears in both dataset and satisfied all inclusion criteria. 
-Among those participants, there are `r filter(combined_clean, sex == "Female") |> nrow()` women and `r filter(combined_clean, sex == "Male") |> nrow()` men. The average age at baseline is `r combined_clean |> pull(current_age) |> mean() |> round(2)`.
 
 ```{r save as csv under the data directory}
 write.csv(combined_pivot, "data/ mci_clean.csv", row.names=FALSE)
